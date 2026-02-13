@@ -59,13 +59,43 @@ class OpensearchConnector:
         host = self.config.host
         port = self.config.port
         opensearch_host = f"{protocol}://{host}:{port}"
+
+        #Fali-fast TLS validation
+        if self.config.verify_certs and protocol != "https":
+            raise ValueError(
+                "Invalid OpenSearch configuration: "
+                "verify_certs=True requires schema_type='https'."
+            )
+
+        
+        #Security posture logging
+        if self.config.verify_certs:
+            if self.config.ca_certs:
+                logger.info(
+                    "OpenSearch TLS verification ENABLED (custom CA): %s",self.config.ca_certs
+                )
+            else:
+                logger.info(
+                    "OpenSearch TLS verification ENABLED (system CA trust store)"
+                )
+        else:
+            logger.warning(
+                "OpenSearch TLS verification DISABLED (insecure, dev-only)"
+            )
+    
         
         logger.info(f"Attempting to connect to OpenSearch at {opensearch_host}")
 
-        self._client = OpenSearch(
-            [opensearch_host],
-            verify_certs=self.config.verify_certs
-        )
+        client_kwargs = {
+           "hosts": [opensearch_host],
+            "verify_certs": self.config.verify_certs
+        }
+
+        #adding CA cetificates only when verification is enabled
+        if self.config.verify_certs and self.config.ca_certs:
+            client_kwargs["ca_certs"] = self.config.ca_certs
+        
+        self.client = OpenSearch(**clinet_kwargs)
 
         if not self._client.ping():
             error_msg = f"Could not connect to OpenSearch at {opensearch_host}"

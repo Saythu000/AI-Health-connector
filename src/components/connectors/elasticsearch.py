@@ -77,13 +77,40 @@ class ElasticsearchConnector:
         es_host = f"{protocol}://{host}:{port}"
         verify_certs = self.config.verify_certs
 
+        #Fail-fast TLS validation
+        if verify_certs and protocol != "https":
+            raise ValueError(
+                "Invalid Elasticsearch configuration:"
+                "verify_certs=True requires schema='https'."
+            )
+
+            #runtime behaviour
+            #SSL error somewhere later
+            #now we get:
+            # ValueError: verify_certs=True requires schema='https'
+
+        #Security logging
+        if verify_certs:
+            if self.config.ca_certs:
+                logger.info("Elasticsearch TLS verification ENABLED (custom CA): %s", self.config.ca_certs)
+            else:
+                logger.info("Elasticsearch TLS verification ENABLED (system CA trust store)")
+        else:
+            logger.warning("Elasticsearch TLS verification DISABLED (insecure, dev-only) ")
+
         logger.info(f"Attempting to connect to Elasticsearch at: {es_host}")
 
         try:
-            self._client = Elasticsearch(
-                [es_host],
-                verify_certs=verify_certs
-            )
+            client_kwargs = {
+                "hosts": [es_host],
+                "verify_certs": verify_certs
+            }
+
+            #Adding CA certificates only when verification is enabled
+            if verify_certs and self.config.ca_certs:
+                client_kwargs["ca_certs"] = self.config.ca_certs
+
+            self._client = Elasticsearch(**client_kwargs) 
             
             # Verify connection
             if not self._client.ping():

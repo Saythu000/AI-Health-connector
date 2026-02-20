@@ -84,11 +84,7 @@ class ElasticsearchConnector:
                 "verify_certs=True requires schema='https'."
             )
 
-            #runtime behaviour
-            #SSL error somewhere later
-            #now we get:
-            # ValueError: verify_certs=True requires schema='https'
-
+            
         #Security logging
         if verify_certs:
             if self.config.ca_certs:
@@ -112,17 +108,18 @@ class ElasticsearchConnector:
             )
 
         logger.info("Attempting to connect to Elasticsearch at: %s", es_host)
-
+         #Client Arguments
         try:
             client_kwargs = {
                 "hosts": [es_host],
                 "verify_certs": verify_certs
             }
 
-            #Adding CA certificates only when verification is enabled
+            #Adding CA certificates only if TLS verification is enabled
             if verify_certs and self.config.ca_certs:
                 client_kwargs["ca_certs"] = self.config.ca_certs
-
+            
+            #AUTHENTICATION (BASIC AUTH)
             if(username and not password) or (password and not username):
                 raise ValueError(
                     "Invalid Elasticsearch authentication configuration:"

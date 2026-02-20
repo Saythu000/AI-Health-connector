@@ -31,6 +31,7 @@ postgres:
 elasticsearch:
   load:
     index_name: "health_data"
+    ingest_mode: single 
     settings:
       index:
         number_of_shards: 1

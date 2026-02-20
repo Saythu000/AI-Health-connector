@@ -97,8 +97,6 @@ class ElasticsearchConnector:
                 logger.info("Elasticsearch TLS verification ENABLED (system CA trust store)")
         else:
             logger.warning("Elasticsearch TLS verification DISABLED (insecure, dev-only) ")
-
-        logger.info(f"Attempting to connect to Elasticsearch at: {es_host}")
         
         #Security Logging - AUTH
         

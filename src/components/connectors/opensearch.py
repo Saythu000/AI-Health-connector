@@ -149,4 +149,3 @@ class OpensearchConnector:
                 "An error occurred while initializing OpenSearch client: %s",e
             )
             raise
-        
